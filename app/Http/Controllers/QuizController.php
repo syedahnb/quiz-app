@@ -9,17 +9,18 @@ use Illuminate\Support\Facades\Session;
 
 class QuizController extends Controller
 {
+
     public function show(Request $request)
     {
         $answeredQuestions = Session::get('answered_questions', []);
         $skippedQuestions = Session::get('skipped_questions', []);
 
 
+        $mergedQuestions = array_unique(array_merge($answeredQuestions, $skippedQuestions));
+
         $remainingQuestions = Question::with('answers')
-            ->whereNotIn('id', $answeredQuestions)
-
+            ->whereNotIn('id', $mergedQuestions)
             ->get();
-
 
         if ($remainingQuestions->isEmpty()) {
             return response()->json(['redirect' => route('quiz.result')]);
@@ -49,9 +50,11 @@ class QuizController extends Controller
 
     public function submit(Request $request)
     {
+
+
+        $skippedId = $request->input('skipped');
         $answerId = $request->input('answer');
         $questionId = $request->input('question_id');
-        $skippedId = $request->input('skipped_id'); // Use the skipped ID passed from the front end
 
         if ($answerId) {
             $answeredQuestions = Session::get('answered_questions', []);
@@ -61,15 +64,21 @@ class QuizController extends Controller
             $answers = Session::get('answers', []);
             $answers[$questionId] = $answerId;
             Session::put('answers', $answers);
+
         } elseif ($skippedId) {
+            // Check if the question is already skipped to prevent duplicates
             $skippedQuestions = Session::get('skipped_questions', []);
-            $skippedQuestions[] = $skippedId; // Add the skipped ID to the skipped questions array
-            Session::put('skipped_questions', $skippedQuestions);
+
+            if (!in_array($questionId, $skippedQuestions)) {
+                $skippedQuestions[] = $questionId;
+                Session::put('skipped_questions', $skippedQuestions);
+
+                Log::info($questionId);
+            }
         }
 
         return response()->json(['success' => true]);
     }
-
 
     public function result()
     {
@@ -77,6 +86,10 @@ class QuizController extends Controller
         $answers = Session::get('answers', []);
         $answeredQuestions = Session::get('answered_questions', []);
         $skippedQuestions = Session::get('skipped_questions', []);
+        Log::info("answer:", ['answers' => $answers]);
+        Log::info("answeredQuestions:", ['answeredQuestions' => $answeredQuestions]);
+        Log::info("answeredQuestions:", ['skippedQuestion' => $skippedQuestions]);
+
 
         $correctCount = 0;
         $wrongCount = 0;
@@ -111,8 +124,6 @@ class QuizController extends Controller
         // Pass data to the view
         return view('quiz.result', compact('correctCount', 'wrongCount', 'skippedCount', 'name'));
     }
-
-
 
     public function getUserName()
     {

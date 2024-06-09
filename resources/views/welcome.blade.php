@@ -104,10 +104,25 @@
             $('#question-container').html(questionHtml);
 
             // Handle skip button click
-            $('kip').on('click', function () {
+            $('.skip').on('click', function () {
                 const questionId = $(this).data('question-id');
-                skippedCount++;
-                loadQuestion();
+
+                // Submit the skipped question along with its ID
+                $.ajax({
+                    url: "{{ route('quiz.submit') }}",
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: {
+                        question_id: questionId,
+                        skipped: true // Add a flag to indicate that the question was skipped
+                    },
+                    success: function (response) {
+                        skippedCount++;
+                        loadQuestion();
+                    }
+                });
             });
         }
 
