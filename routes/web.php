@@ -20,10 +20,5 @@ Route::get('/quiz', [QuizController::class, 'show'])->name('quiz.show');
 Route::post('/quiz/store-name', [QuizController::class, 'storeName'])->name('quiz.storeName');
 Route::post('/quiz/submit', [QuizController::class, 'submit'])->name('quiz.submit');
 Route::get('/quiz/result', [QuizController::class, 'result'])->name('quiz.result');
-Route::get('/refresh-csrf-token', function () {
-    return response()->json(['csrf_token' => csrf_token()]);
-})->name('refreshCsrfToken');
-
-Route::get('/check-session', [QuizController::class, 'checkSession'])->name('checkSession');
 
 Route::get('/getUserName', [QuizController::class, 'getUserName'])->name('getUserName');
